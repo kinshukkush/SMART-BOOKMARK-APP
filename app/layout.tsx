@@ -2,8 +2,13 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Smart Bookmark',
-  description: 'Save and manage your bookmarks',
+  title: 'Smart Bookmark - Save & Manage Bookmarks',
+  description: 'A simple, privacy-first bookmark manager with real-time sync. Sign in with Google and start organizing your web.',
+  icons: {
+    icon: '/logo.svg',
+    shortcut: '/logo.svg',
+    apple: '/logo.svg',
+  },
 }
 
 export default function RootLayout({
