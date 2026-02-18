@@ -33,6 +33,12 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# project documentation (keep locally, not in public repo)
+file-explanation.md
+setup-steps.md
+supabase-setup.sql
+vercel-env.txt
+
 # vercel
 .vercel
 
