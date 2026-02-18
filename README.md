@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# README.md — Smart Bookmark App
 
-## Getting Started
+## What This App Does
 
-First, run the development server:
+A simple bookmark manager where users sign in with Google and save, view, and delete their own bookmarks. Bookmarks update in real-time across browser tabs using Supabase Realtime.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Tech Stack
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Next.js 15** (App Router)
+- **Supabase** (Auth, PostgreSQL, Realtime)
+- **Tailwind CSS**
+- **Deployed on Vercel**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Key Points
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Google OAuth only — no email/password login
+- Each user sees only their own bookmarks (enforced via Row Level Security in Supabase)
+- Real-time sync: open two tabs, add a bookmark in one, it appears in the other instantly
+- Middleware protects all routes — unauthenticated users are redirected to `/login`
 
-## Learn More
+## Problems Encountered and How They Were Solved
 
-To learn more about Next.js, take a look at the following resources:
+### 1. Next.js project name restriction
+**Problem:** `create-next-app` does not allow capital letters or spaces in the project name, but the target folder was `Smart Bookmark App`.  
+**Solution:** Created the project inside a subdirectory named `app` within the workspace folder.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. Supabase SSR cookie handling
+**Problem:** Supabase Auth with Next.js App Router requires cookies to be read/written server-side. The old `createClient` from `@supabase/supabase-js` does not handle this.  
+**Solution:** Used `@supabase/ssr` package which provides `createBrowserClient` and `createServerClient` with proper cookie adapters for Next.js middleware and Server Components.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Real-time updates scoped to the current user
+**Problem:** Supabase Realtime broadcasts all changes on a table by default. We only want to receive changes for the logged-in user's bookmarks.  
+**Solution:** Used the `filter` option on the Realtime channel: `filter: \`user_id=eq.${user.id}\`` — this ensures only relevant changes are pushed to the client.
 
-## Deploy on Vercel
+### 4. Row Level Security (RLS)
+**Problem:** Without RLS, any authenticated user could read or delete another user's bookmarks via the API.  
+**Solution:** Enabled RLS on the `bookmarks` table and added policies so users can only SELECT, INSERT, and DELETE their own rows (`user_id = auth.uid()`).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 5. Redirect URI mismatch for Google OAuth
+**Problem:** Google OAuth requires the exact redirect URI to be whitelisted. Using the wrong URL causes an `redirect_uri_mismatch` error.  
+**Solution:** Added `https://ymanansjcaegsuokieav.supabase.co/auth/v1/callback` as an authorized redirect URI in Google Cloud Console, and also added the Vercel production URL's auth callback after deployment.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Live URL
+
+> Add your Vercel URL here after deployment
+
+## GitHub Repo
+
+> https://github.com/kinshukkush/SMART-BOOKMARK-APP
