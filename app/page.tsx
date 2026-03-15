@@ -151,9 +151,9 @@ export default function BookmarksPage() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       result = result.filter(
-        b => b.title.toLowerCase().includes(q) || 
-             b.url.toLowerCase().includes(q) || 
-             b.notes.toLowerCase().includes(q)
+        b => (b.title || '').toLowerCase().includes(q) || 
+             (b.url || '').toLowerCase().includes(q) || 
+             (b.notes || '').toLowerCase().includes(q)
       )
     }
 
@@ -203,12 +203,12 @@ export default function BookmarksPage() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     setAddError('')
-    if (!addTitle.trim() || !addUrl.trim()) {
-      setAddError('Both title and URL are required.')
+    if (!addTitle.trim()) {
+      setAddError('Title is required.')
       return
     }
     let finalUrl = addUrl.trim()
-    if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+    if (finalUrl && !finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
       finalUrl = 'https://' + finalUrl
     }
     setAdding(true)
@@ -246,7 +246,7 @@ export default function BookmarksPage() {
     if (!selectedBookmark) return
     setUpdating(true)
     let finalUrl = editUrl.trim()
-    if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+    if (finalUrl && !finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
       finalUrl = 'https://' + finalUrl
     }
     await supabase.from('bookmarks').update({
@@ -392,7 +392,7 @@ export default function BookmarksPage() {
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2.5 max-w-[85%]">
                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                     <img src={`https://www.google.com/s2/favicons?domain=${bookmark.url}&sz=32`} alt="" className="w-5 h-5 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 shrink-0" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                     {bookmark.url && <img src={`https://www.google.com/s2/favicons?domain=${bookmark.url}&sz=32`} alt="" className="w-5 h-5 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 shrink-0" onError={(e) => (e.currentTarget.style.display = 'none')} />}
                      <h3 className="font-bold text-gray-800 dark:text-gray-100 truncate flex-1">{bookmark.title}</h3>
                   </div>
                   <button onClick={(e) => togglePin(bookmark, e)} className="p-1 -m-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0" title={bookmark.pinned ? "Unpin" : "Pin to top"}>
@@ -400,10 +400,16 @@ export default function BookmarksPage() {
                   </button>
                 </div>
                 <div className="flex items-center gap-1.5 text-sm text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors mb-4 group-hover:translate-x-1 duration-200">
-                  <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="truncate font-medium flex-1">
-                    {bookmark.url.replace(/^https?:\/\//, '')}
-                  </a>
-                  <svg className="w-3.5 h-3.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                  {bookmark.url ? (
+                    <>
+                      <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="truncate font-medium flex-1">
+                        {bookmark.url.replace(/^https?:\/\//, '')}
+                      </a>
+                      <svg className="w-3.5 h-3.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    </>
+                  ) : (
+                    <span className="truncate flex-1 text-gray-400 dark:text-gray-500 italic">No URL provided</span>
+                  )}
                 </div>
                 
                 {bookmark.notes ? (
@@ -472,18 +478,21 @@ export default function BookmarksPage() {
 
                 {/* URL */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">URL</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">URL (Optional)</label>
                   <div className="flex gap-2">
                     <input 
                       type="text" 
                       value={editUrl} 
                       onChange={e => setEditUrl(e.target.value)}
+                      placeholder="https://example.com"
                       className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors"
                     />
-                    <a href={editUrl} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex items-center justify-center border border-blue-100 dark:border-blue-800" title="Open in new tab">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                    </a>
-                    <button onClick={() => copyUrl(editUrl)} className="p-2.5 bg-gray-50 text-gray-600 dark:bg-gray-900 dark:text-gray-300 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center" title="Copy URL">
+                    {editUrl && (
+                      <a href={editUrl} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex items-center justify-center border border-blue-100 dark:border-blue-800" title="Open in new tab">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </a>
+                    )}
+                    <button onClick={() => copyUrl(editUrl)} disabled={!editUrl} className="p-2.5 bg-gray-50 text-gray-600 dark:bg-gray-900 dark:text-gray-300 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center disabled:opacity-50" title="Copy URL">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                     </button>
                   </div>
@@ -543,7 +552,7 @@ export default function BookmarksPage() {
                   <button onClick={() => setSelectedBookmark(null)} className="px-5 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors">
                     Cancel
                   </button>
-                  <button onClick={handleUpdate} disabled={updating || !editTitle || !editUrl || (editTitle === selectedBookmark.title && editUrl === selectedBookmark.url && editNotes === (selectedBookmark.notes || '') && editCategory === (selectedBookmark.category || 'General'))} className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                  <button onClick={handleUpdate} disabled={updating || !editTitle || (editTitle === selectedBookmark.title && editUrl === selectedBookmark.url && editNotes === (selectedBookmark.notes || '') && editCategory === (selectedBookmark.category || 'General'))} className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                     {updating ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
@@ -589,7 +598,7 @@ export default function BookmarksPage() {
               )}
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">URL <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">URL (Optional)</label>
                 <div className="relative">
                   {addUrl && (
                     <div className="absolute left-4 top-3">
@@ -603,7 +612,6 @@ export default function BookmarksPage() {
                     placeholder="https://example.com" 
                     value={addUrl} 
                     onChange={e => setAddUrl(e.target.value)}
-                    required
                     className={`w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl py-3 pr-4 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors ${addUrl ? 'pl-11' : 'pl-4'}`}
                   />
                 </div>
